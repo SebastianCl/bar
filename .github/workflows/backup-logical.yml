@@ -1,0 +1,110 @@
+name: Backup lógico reutilizable
+
+on:
+  workflow_call:
+    inputs:
+      cadence:
+        description: Etiqueta del respaldo
+        required: true
+        type: string
+      retention_days:
+        description: Retención del artefacto cifrado
+        required: true
+        type: number
+      scope:
+        description: data para diario; full para roles, esquema y datos
+        required: true
+        type: string
+    secrets:
+      SUPABASE_DB_URL:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARCHIVE_BASENAME: bar-${{ inputs.cadence }}-${{ github.run_id }}-${{ github.run_attempt }}
+      AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Validar entradas sin imprimir secretos
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "Falta SUPABASE_DB_URL"; exit 1; }
+          test -n "$AGE_RECIPIENT" || { echo "Falta BACKUP_AGE_RECIPIENT"; exit 1; }
+          [[ "$SUPABASE_DB_URL" == postgres://* || "$SUPABASE_DB_URL" == postgresql://* ]] || {
+            echo "SUPABASE_DB_URL debe ser una URI PostgreSQL";
+            exit 1;
+          }
+          [[ "$AGE_RECIPIENT" == age1* ]] || {
+            echo "BACKUP_AGE_RECIPIENT debe ser un destinatario age X25519";
+            exit 1;
+          }
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.111.0
+
+      - name: Instalar age
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes age
+
+      - name: Exportar roles, esquema y datos
+        shell: bash
+        run: |
+          set -euo pipefail
+          backup_root="${RUNNER_TEMP}/bar-backup-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -p "$backup_root"
+          if [[ "${{ inputs.scope }}" == "full" ]]; then
+            supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_root/roles.sql" --role-only
+            supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_root/schema.sql"
+          elif [[ "${{ inputs.scope }}" != "data" ]]; then
+            echo "Scope de backup inválido"; exit 1
+          fi
+          supabase db dump --db-url "$SUPABASE_DB_URL" --file "$backup_root/data.sql" \
+            --data-only --use-copy \
+            -x storage.buckets_vectors \
+            -x storage.vector_indexes
+          printf '%s\n' \
+            "cadence=${{ inputs.cadence }}" \
+            "scope=${{ inputs.scope }}" \
+            "created_at=$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
+            "repository=${GITHUB_REPOSITORY}" \
+            "run_id=${GITHUB_RUN_ID}" \
+            > "$backup_root/manifest.txt"
+
+      - name: Cifrar y calcular checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          backup_root="${RUNNER_TEMP}/bar-backup-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          archive="${RUNNER_TEMP}/${ARCHIVE_BASENAME}.tar.gz.age"
+          tar -C "$backup_root" -czf - . | age --recipient "$AGE_RECIPIENT" --output "$archive"
+          cd "$RUNNER_TEMP"
+          sha256sum "${ARCHIVE_BASENAME}.tar.gz.age" > "${ARCHIVE_BASENAME}.tar.gz.age.sha256"
+
+      - name: Subir artefacto cifrado
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE_BASENAME }}
+          path: |
+            ${{ runner.temp }}/${{ env.ARCHIVE_BASENAME }}.tar.gz.age
+            ${{ runner.temp }}/${{ env.ARCHIVE_BASENAME }}.tar.gz.age.sha256
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+
+      - name: Eliminar temporales en el runner
+        if: always()
+        shell: bash
+        run: |
+          rm -rf -- "${RUNNER_TEMP}/bar-backup-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rm -f -- "${RUNNER_TEMP}/${ARCHIVE_BASENAME}.tar.gz.age"
+          rm -f -- "${RUNNER_TEMP}/${ARCHIVE_BASENAME}.tar.gz.age.sha256"

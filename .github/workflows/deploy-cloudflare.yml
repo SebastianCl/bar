@@ -1,0 +1,163 @@
+name: Desplegar Cloudflare Pages
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Entorno de destino
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-cloudflare-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      branch: ${{ steps.resolve.outputs.branch }}
+      target: ${{ steps.resolve.outputs.target }}
+    steps:
+      - name: Resolver y proteger destino
+        id: resolve
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          GIT_REF_NAME: ${{ github.ref_name }}
+          PR_HEAD_REF: ${{ github.head_ref }}
+          MANUAL_TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request)
+              target="preview"
+              branch="$PR_HEAD_REF"
+              ;;
+            push)
+              target="production"
+              branch="$GIT_REF_NAME"
+              ;;
+            workflow_dispatch)
+              target="$MANUAL_TARGET"
+              if [[ "$target" == "preview" && "$GIT_REF_NAME" == "main" ]]; then
+                branch="preview"
+              else
+                branch="$GIT_REF_NAME"
+              fi
+              ;;
+            *)
+              echo "::error::Evento de despliegue no permitido: $EVENT_NAME"
+              exit 1
+              ;;
+          esac
+
+          [[ "$target" == "preview" || "$target" == "production" ]] || {
+            echo "::error::Destino inválido: $target"
+            exit 1
+          }
+          [[ -n "$branch" ]] || {
+            echo "::error::No se pudo determinar la rama real del despliegue"
+            exit 1
+          }
+          if [[ "$target" == "production" && "$GIT_REF" != "refs/heads/main" ]]; then
+            echo "::error::Producción solo puede desplegarse desde refs/heads/main"
+            exit 1
+          fi
+          if [[ "$target" == "preview" && "$branch" == "main" ]]; then
+            echo "::error::Preview nunca puede publicarse como rama Cloudflare main"
+            exit 1
+          fi
+
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: resolve-target
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: ${{ needs.resolve-target.outputs.target }}
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Configurar pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Validar configuración
+        shell: bash
+        env:
+          APP_ENV: ${{ needs.resolve-target.outputs.target }}
+          CF_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$CF_PROJECT" || { echo "Falta CLOUDFLARE_PAGES_PROJECT"; exit 1; }
+          test -n "$SUPABASE_URL" || { echo "Falta VITE_SUPABASE_URL"; exit 1; }
+          test -n "$SUPABASE_KEY" || { echo "Falta VITE_SUPABASE_PUBLISHABLE_KEY"; exit 1; }
+          [[ "$SUPABASE_URL" == https://*.supabase.co ]] || {
+            echo "La URL de Supabase no corresponde a un proyecto alojado"
+            exit 1
+          }
+          [[ "$SUPABASE_KEY" == sb_publishable_* ]] || {
+            echo "VITE_SUPABASE_PUBLISHABLE_KEY debe comenzar por sb_publishable_"
+            exit 1
+          }
+          [[ "$APP_ENV" == "preview" || "$APP_ENV" == "production" ]] || {
+            echo "VITE_APP_ENV de despliegue inválido"
+            exit 1
+          }
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Verificar calidad
+        run: pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
+        env:
+          VITE_APP_ENV: ${{ needs.resolve-target.outputs.target }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Construir
+        run: pnpm build
+        env:
+          VITE_APP_ENV: ${{ needs.resolve-target.outputs.target }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Publicar en Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+            --branch=${{ needs.resolve-target.outputs.branch }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

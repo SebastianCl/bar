@@ -1,0 +1,41 @@
+# Dependencias y salidas
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Entorno local: solo se versiona la plantilla
+.env
+.env.*
+!.env.example
+
+# Pruebas
+playwright-report/
+test-results/
+
+# Supabase local
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Backups y material criptográfico
+*.age
+*.dump
+*.backup
+backups/**/*.sql
+backup-*/
+restore-*/
+age-key*.txt
+
+# Editores y sistema operativo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Logs
+*.log
+npm-debug.log*
