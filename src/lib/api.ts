@@ -16,6 +16,25 @@ import type {
   TabItem,
 } from './database.types';
 import type { OpenTabInput, ProductInput } from './schemas';
+import { isDummyMode } from './env';
+import {
+  dummyAddConsumption,
+  dummyBarSettings,
+  dummyCancelTab,
+  dummyCloseTab,
+  dummyCreateProduct,
+  dummyGetReceipt,
+  dummyGetTabDetail,
+  dummyListOpenTabs,
+  dummyListProducts,
+  dummyListReceipts,
+  dummyOpenTab,
+  dummyProfile,
+  dummySetItemQuantity,
+  dummySetStock,
+  dummyUpdateProduct,
+  dummyVoidItem,
+} from './dummy-store';
 
 export interface TabDetail {
   tab: Tab;
@@ -87,6 +106,7 @@ function moneyFromDatabase(value: unknown): number {
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {
+  if (isDummyMode()) return userId === dummyProfile.id ? dummyProfile : null;
   const { data, error } = await getSupabase()
     .from('profiles')
     .select('id, display_name, role, is_active, created_at, updated_at')
@@ -100,6 +120,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 export async function listProducts(options?: {
   activeOnly?: boolean;
 }): Promise<Product[]> {
+  if (isDummyMode()) return dummyListProducts(options?.activeOnly);
   let query = getSupabase()
     .from('products')
     .select('*')
@@ -113,6 +134,7 @@ export async function listProducts(options?: {
 }
 
 export async function listOpenTabs(): Promise<OpenTabSummary[]> {
+  if (isDummyMode()) return dummyListOpenTabs();
   const { data, error } = await getSupabase()
     .from('open_tabs_summary')
     .select('*')
@@ -123,6 +145,7 @@ export async function listOpenTabs(): Promise<OpenTabSummary[]> {
 }
 
 export async function getBarSettings(): Promise<BarSettings | null> {
+  if (isDummyMode()) return dummyBarSettings;
   const { data, error } = await getSupabase()
     .from('bar_settings')
     .select('*')
@@ -134,6 +157,7 @@ export async function getBarSettings(): Promise<BarSettings | null> {
 }
 
 export async function getTabDetail(tabId: string): Promise<TabDetail> {
+  if (isDummyMode()) return dummyGetTabDetail(tabId);
   const [tabResult, itemsResult, summaryResult, receiptResult] = await Promise.all([
     getSupabase().from('tabs').select('*').eq('id', tabId).maybeSingle(),
     getSupabase()
@@ -188,6 +212,23 @@ export async function listReceipts(
 ): Promise<ReceiptPage> {
   const pageSize = Math.min(Math.max(options.pageSize ?? 50, 1), 100);
   const offset = Math.max(options.offset ?? 0, 0);
+  if (isDummyMode()) {
+    let rows = dummyListReceipts();
+    const search = options.search?.trim().toLocaleLowerCase('es-CO');
+    if (search)
+      rows = rows.filter(
+        (row) =>
+          row.receipt_code.toLocaleLowerCase('es-CO').includes(search) ||
+          row.reference_label_snapshot.toLocaleLowerCase('es-CO').includes(search),
+      );
+    const dayRange = options.date ? bogotaDayRange(options.date) : null;
+    if (dayRange)
+      rows = rows.filter(
+        (row) => row.issued_at >= dayRange.start && row.issued_at < dayRange.end,
+      );
+    const page = rows.slice(offset, offset + pageSize);
+    return { items: page, hasMore: offset + pageSize < rows.length };
+  }
   let query = getSupabase()
     .from('receipts')
     .select('*')
@@ -214,6 +255,7 @@ export async function listReceipts(
 }
 
 export async function getReceiptDetail(receiptId: string): Promise<ReceiptDetail> {
+  if (isDummyMode()) return dummyGetReceipt(receiptId);
   const [receiptResult, itemsResult] = await Promise.all([
     getSupabase().from('receipts').select('*').eq('id', receiptId).maybeSingle(),
     getSupabase()
@@ -241,6 +283,7 @@ export async function openTab(
   requestId = createIntentId(),
 ): Promise<Tab> {
   requireOnline();
+  if (isDummyMode()) return dummyOpenTab(input, requestId);
   const referenceType: ReferenceType = input.tableLabel ? 'table' : 'customer';
   const referenceLabel = input.tableLabel || input.customerName;
   const { data, error } = await getSupabase().rpc('open_tab', {
@@ -256,6 +299,7 @@ export async function createProduct(
   requestId = createIntentId(),
 ): Promise<Product> {
   requireOnline();
+  if (isDummyMode()) return dummyCreateProduct(input);
   const { data, error } = await getSupabase().rpc('create_product', {
     p_sku: input.sku || null,
     p_name: input.name,
@@ -271,6 +315,7 @@ export async function updateProduct(
   input: ProductInput,
 ): Promise<Product> {
   requireOnline();
+  if (isDummyMode()) return dummyUpdateProduct(productId, input);
   const { data, error } = await getSupabase().rpc('update_product', {
     p_product_id: productId,
     p_sku: input.sku || null,
@@ -288,6 +333,7 @@ export async function setStock(
   requestId = createIntentId(),
 ): Promise<Product> {
   requireOnline();
+  if (isDummyMode()) return dummySetStock(productId, quantity);
   const { data, error } = await getSupabase().rpc('set_stock', {
     p_product_id: productId,
     p_counted_quantity: quantity,
@@ -304,6 +350,7 @@ export async function addConsumption(
   requestId = createIntentId(),
 ): Promise<{ tab: Tab; item: TabItem; product: Product; total: number }> {
   requireOnline();
+  if (isDummyMode()) return dummyAddConsumption(tabId, productId, quantity, requestId);
   const { data, error } = await getSupabase().rpc('add_consumption', {
     p_tab_id: tabId,
     p_product_id: productId,
@@ -325,6 +372,7 @@ export async function setTabItemQuantity(
   requestId = createIntentId(),
 ): Promise<{ tab: Tab; item: TabItem; product: Product; total: number }> {
   requireOnline();
+  if (isDummyMode()) return dummySetItemQuantity(itemId, quantity);
   const { data, error } = await getSupabase().rpc('set_tab_item_quantity', {
     p_item_id: itemId,
     p_new_quantity: quantity,
@@ -344,6 +392,7 @@ export async function voidTabItem(
   requestId = createIntentId(),
 ): Promise<{ tab: Tab; item: TabItem; product: Product; total: number }> {
   requireOnline();
+  if (isDummyMode()) return dummyVoidItem(itemId);
   const { data, error } = await getSupabase().rpc('void_tab_item', {
     p_item_id: itemId,
     p_request_id: requestId,
@@ -362,6 +411,7 @@ export async function cancelEmptyTab(
   requestId = createIntentId(),
 ): Promise<Tab> {
   requireOnline();
+  if (isDummyMode()) return dummyCancelTab(tabId);
   const { data, error } = await getSupabase().rpc('cancel_empty_tab', {
     p_tab_id: tabId,
     p_request_id: requestId,
@@ -374,6 +424,7 @@ export async function closeTab(
   requestId = createIntentId(),
 ): Promise<{ tab: Tab; receipt: Receipt; items: ReceiptItem[] }> {
   requireOnline();
+  if (isDummyMode()) return dummyCloseTab(tabId, requestId);
   const { data, error } = await getSupabase().rpc('close_tab', {
     p_tab_id: tabId,
     p_request_id: requestId,

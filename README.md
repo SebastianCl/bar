@@ -9,6 +9,7 @@ e inventario.
 - React 19, TypeScript y Vite.
 - Supabase Auth, PostgreSQL, RLS y funciones RPC transaccionales.
 - Cloudflare Pages para el frontend estático.
+- Vercel como despliegue provisional para la demo pública.
 - Vitest, Playwright, ESLint y Prettier.
 - GitHub Actions para CI, despliegue y backups lógicos cifrados.
 
@@ -19,6 +20,19 @@ e inventario.
 - Docker Desktop para Supabase local y un proyecto preview para integración.
 
 ## Inicio local
+
+### Demo sin Supabase
+
+Para recorrer toda la aplicación con datos de muestra, sin crear un proyecto ni configurar Auth:
+
+```bash
+pnpm install
+pnpm dev:demo
+```
+
+Abre la URL indicada por Vite. Entrarás automáticamente como administrador y podrás modificar inventario, abrir cuentas, registrar consumos, cerrar ventas e imprimir comprobantes. Los cambios se guardan en `localStorage`; usa **Reiniciar datos demo** en la barra lateral para volver al estado inicial.
+
+### Desarrollo con Supabase
 
 ```sh
 corepack enable
@@ -109,6 +123,22 @@ el flujo administrativo que escribe datos corre una sola vez en `1440×900`.
   externo de 12 meses.
 - `Backup completo posterior a migración`: ejecución manual tras cada `supabase db push`
   productivo; nunca antes de aplicar la migración remota.
+
+## Despliegue Provisional En Vercel
+
+Sí, se puede publicar una versión provisional en Vercel para que el cliente entre por
+una URL y pruebe el mismo software con datos demo.
+
+1. Crear un proyecto Vercel conectado a este repositorio.
+2. Configurar `VITE_USE_DUMMY_DATA=true`.
+3. Opcionalmente configurar `VITE_APP_ENV=preview`.
+4. Usar `pnpm build:demo` como comando de build, o `pnpm build` si el entorno ya inyecta
+   `VITE_USE_DUMMY_DATA=true`.
+5. Publicar normalmente. El archivo `vercel.json` ya deja resueltas las rutas de SPA
+   como `/cuentas`, `/inventario` y `/ventas`.
+
+El modo demo guarda cambios solo en `localStorage` del navegador, así que el cliente
+podrá probar la app sin tocar Supabase ni afectar datos reales.
 
 Los backups requieren `SUPABASE_DB_URL` como secreto y
 `BACKUP_AGE_RECIPIENT` como variable pública. La clave privada `age` debe conservarse

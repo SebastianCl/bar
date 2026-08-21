@@ -4,6 +4,8 @@ import { useAuth } from '../auth/auth-context';
 import { getBarSettings } from '../lib/api';
 import { roleLabel } from '../lib/format';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { isDummyMode } from '../lib/env';
+import { resetDummyData } from '../lib/dummy-store';
 
 const navigation = [
   { to: '/cuentas', label: 'Cuentas', icon: '▤' },
@@ -15,6 +17,12 @@ export function AppLayout() {
   const { profile, signOut } = useAuth();
   const isOnline = useOnlineStatus();
   const [barName, setBarName] = useState('Bar');
+  const demoMode = isDummyMode();
+
+  const resetDemo = () => {
+    resetDummyData();
+    window.location.assign('/cuentas');
+  };
 
   useEffect(() => {
     void getBarSettings()
@@ -51,6 +59,11 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="sidebar__footer">
+          {demoMode ? (
+            <div className="alert alert--info" role="status">
+              Modo demo: los cambios se guardan solo en este navegador.
+            </div>
+          ) : null}
           <div className="user-summary">
             <span className="user-summary__avatar" aria-hidden="true">
               {profile?.display_name.slice(0, 1).toUpperCase()}
@@ -60,13 +73,23 @@ export function AppLayout() {
               <small>{roleLabel(profile?.role ?? '')}</small>
             </span>
           </div>
-          <button
-            type="button"
-            className="button button--ghost button--full"
-            onClick={() => void signOut()}
-          >
-            Cerrar sesión
-          </button>
+          {demoMode ? (
+            <button
+              type="button"
+              className="button button--ghost button--full"
+              onClick={resetDemo}
+            >
+              Reiniciar datos demo
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="button button--ghost button--full"
+              onClick={() => void signOut()}
+            >
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </aside>
 
@@ -82,8 +105,12 @@ export function AppLayout() {
             <span className="brand__mark">B</span>
             <strong>{barName}</strong>
           </div>
-          <button type="button" className="text-button" onClick={() => void signOut()}>
-            Salir
+          <button
+            type="button"
+            className="text-button"
+            onClick={demoMode ? resetDemo : () => void signOut()}
+          >
+            {demoMode ? 'Reiniciar' : 'Salir'}
           </button>
         </header>
         <main className="app-main">

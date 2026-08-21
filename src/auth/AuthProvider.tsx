@@ -10,6 +10,8 @@ import type { Session } from '@supabase/supabase-js';
 import { getProfile } from '../lib/api';
 import type { Profile } from '../lib/database.types';
 import { ConfigurationError } from '../lib/env';
+import { isDummyMode } from '../lib/env';
+import { DUMMY_USER_ID, dummyProfile } from '../lib/dummy-store';
 import { normalizeError } from '../lib/errors';
 import { getSupabase } from '../lib/supabase';
 import { useInactivityLogout } from '../hooks/useInactivityLogout';
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
     }
     try {
-      await getSupabase().auth.signOut();
+      if (!isDummyMode()) await getSupabase().auth.signOut();
     } finally {
       activeUserRef.current = null;
       setSession(null);
@@ -63,6 +65,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initialize = async () => {
       try {
+        if (isDummyMode()) {
+          const user = {
+            id: DUMMY_USER_ID,
+            email: 'demo@bar.local',
+            aud: 'authenticated',
+            role: 'authenticated',
+            created_at: dummyProfile.created_at,
+            app_metadata: {},
+            user_metadata: { display_name: dummyProfile.display_name },
+          };
+          activeUserRef.current = DUMMY_USER_ID;
+          setSession({
+            access_token: 'dummy',
+            refresh_token: 'dummy',
+            expires_in: 86400,
+            expires_at: Math.floor(Date.now() / 1000) + 86400,
+            token_type: 'bearer',
+            user,
+          } as Session);
+          setProfile(dummyProfile);
+          return;
+        }
         const supabase = getSupabase();
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
