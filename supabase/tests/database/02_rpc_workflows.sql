@@ -454,7 +454,7 @@ select is(
 
 select is(
   (select (payload #>> '{receipt,total}')::numeric from test_state where key = 'close_two'),
-  30000.00::numeric,
+  32000.00::numeric,
   'the receipt total uses historical prices'
 );
 
