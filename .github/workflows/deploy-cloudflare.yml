@@ -161,3 +161,4 @@ jobs:
             --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
             --branch=${{ needs.resolve-target.outputs.branch }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          packageManager: npm
