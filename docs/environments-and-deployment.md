@@ -67,6 +67,13 @@ automáticamente el fallback de una SPA si no existe un `404.html` superior.
 5. Confirmar inicio de sesión, inventario y lectura del historial sin crear una venta de
    prueba permanente en producción.
 
+Si el inicio de sesión falla por CORS después de publicar el frontend, confirmar en
+Network que el preflight de `username-login` permite el header `x-application-name`.
+Ese header lo envía el cliente Supabase de la app; cualquier cambio en
+`supabase/functions/username-login/index.ts` requiere redesplegar la Edge Function en el
+proyecto Supabase correspondiente, además de redesplegar Cloudflare Pages si cambiaron
+variables `VITE_*`.
+
 La ejecución manual sigue disponible para preview y redeploys controlados. Elegir
 `production` desde cualquier ref distinta de `refs/heads/main` hace fallar el job de
 protección antes de acceder al Environment. Un preview manual lanzado desde `main` se
