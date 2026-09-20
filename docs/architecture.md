@@ -129,18 +129,18 @@ Todas las funciones retornan un envelope JSONB con `ok`; los errores incluyen c�
 mensaje. Los UUID de solicitud se generan una vez por intención del operador y son
 globalmente únicos entre RPC.
 
-| RPC                     | Argumentos                                                       | Resultado principal       |
-| ----------------------- | ---------------------------------------------------------------- | ------------------------- |
-| `open_tab`              | `p_reference_type`, `p_reference_label`, `p_request_id`          | `tab`                     |
-| `create_product`        | `p_sku`, `p_name`, `p_price`, `p_opening_stock`, `p_request_id`  | `product`                 |
-| `update_product`        | `p_product_id`, `p_sku`, `p_name`, `p_price`, `p_is_active`      | `product`                 |
-| `set_stock`             | `p_product_id`, `p_counted_quantity`, `p_reason`, `p_request_id` | `product`                 |
-| `add_consumption`       | `p_tab_id`, `p_product_id`, `p_quantity`, `p_request_id`         | `tab`, `item`, `product`  |
-| `set_tab_item_quantity` | `p_item_id`, `p_new_quantity`, `p_request_id`                    | `tab`, `item`, `product`  |
-| `void_tab_item`         | `p_item_id`, `p_request_id`                                      | `tab`, `item`, `product`  |
-| `cancel_empty_tab`      | `p_tab_id`, `p_request_id`                                       | `tab`                     |
-| `close_tab`             | `p_tab_id`, `p_request_id`                                       | `tab`, `receipt`, `items` |
-| `add_tab_payment`       | `p_tab_id`, `p_amount`, `p_payer_name`, `p_request_id`            | `payment`, `paid_total`, `balance` |
+| RPC                     | Argumentos                                                       | Resultado principal                |
+| ----------------------- | ---------------------------------------------------------------- | ---------------------------------- |
+| `open_tab`              | `p_reference_type`, `p_reference_label`, `p_request_id`          | `tab`                              |
+| `create_product`        | `p_sku`, `p_name`, `p_price`, `p_opening_stock`, `p_request_id`  | `product`                          |
+| `update_product`        | `p_product_id`, `p_sku`, `p_name`, `p_price`, `p_is_active`      | `product`                          |
+| `set_stock`             | `p_product_id`, `p_counted_quantity`, `p_reason`, `p_request_id` | `product`                          |
+| `add_consumption`       | `p_tab_id`, `p_product_id`, `p_quantity`, `p_request_id`         | `tab`, `item`, `product`           |
+| `set_tab_item_quantity` | `p_item_id`, `p_new_quantity`, `p_request_id`                    | `tab`, `item`, `product`           |
+| `void_tab_item`         | `p_item_id`, `p_request_id`                                      | `tab`, `item`, `product`           |
+| `cancel_empty_tab`      | `p_tab_id`, `p_request_id`                                       | `tab`                              |
+| `close_tab`             | `p_tab_id`, `p_request_id`                                       | `tab`, `receipt`, `items`          |
+| `add_tab_payment`       | `p_tab_id`, `p_amount`, `p_payer_name`, `p_request_id`           | `payment`, `paid_total`, `balance` |
 
 No se aceptan desde el cliente precio snapshot, total, actor, stock resultante ni número
 de recibo. `update_product` es una edición administrativa y no cambia inventario; el

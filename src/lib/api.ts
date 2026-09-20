@@ -151,11 +151,7 @@ export async function getTabDetail(tabId: string): Promise<TabDetail> {
         .select('total')
         .eq('id', tabId)
         .maybeSingle(),
-      getSupabase()
-        .from('receipts')
-        .select('total')
-        .eq('tab_id', tabId)
-        .maybeSingle(),
+      getSupabase().from('receipts').select('total').eq('tab_id', tabId).maybeSingle(),
       getSupabase()
         .from('tab_payments')
         .select('*')

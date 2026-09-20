@@ -80,7 +80,11 @@ export function AccountDetailPage() {
     setPendingAction('payment');
     setActionError('');
     try {
-      await addTabPayment(id, parsed.data, (paymentIntentRef.current ??= createIntentId()));
+      await addTabPayment(
+        id,
+        parsed.data,
+        (paymentIntentRef.current ??= createIntentId()),
+      );
       paymentIntentRef.current = null;
       setPaymentOpen(false);
       setPaymentAmount('');

@@ -401,7 +401,7 @@ select is(
 
 select throws_ok(
   format(
-    'select public.add_tab_payment(%L::uuid, 26000.00, null, %L::uuid)',
+    'select public.add_tab_payment(%L::uuid, 28000.00, null, %L::uuid)',
     (select payload #>> '{tab,id}' from test_state where key = 'tab_two'),
     '71000000-0000-0000-0000-000000000002'
   ),
@@ -424,7 +424,7 @@ select throws_ok(
 insert into test_state (key, payload)
 select 'payment_final', public.add_tab_payment(
   (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
-  25000.00,
+  27000.00,
   null,
   '71000000-0000-0000-0000-000000000003'
 );
