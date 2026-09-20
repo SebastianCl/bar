@@ -34,9 +34,9 @@ navegador; nunca se configura `service_role` ni una conexión PostgreSQL como va
    estable de la rama preview. Configurar dos usuarios exclusivos de prueba, nunca de
    producción:
 
-   - `E2E_EMAIL` y `E2E_PASSWORD`: empleado sin privilegios administrativos para el
+   - `E2E_USERNAME` y `E2E_PASSWORD`: empleado sin privilegios administrativos para el
      smoke de inicio de sesión;
-   - `E2E_ADMIN_EMAIL` y `E2E_ADMIN_PASSWORD`: administrador de preview para crear un
+   - `E2E_ADMIN_USERNAME` y `E2E_ADMIN_PASSWORD`: administrador de preview para crear un
      producto único con stock 20, abrir una cuenta única, validar consumo, inventario y
      total al pasar de 3 a 5 unidades, cerrar, comprobar el recibo e invocar impresión.
 

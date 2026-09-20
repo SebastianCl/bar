@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readCredentials } from './environment';
 
 const staffCredentials = readCredentials(
-  'E2E_EMAIL',
+  'E2E_USERNAME',
   'E2E_PASSWORD',
   'el smoke autenticado de staff',
 );
@@ -10,7 +10,7 @@ const staffCredentials = readCredentials(
 async function signInAsStaff(page: Page) {
   if (!staffCredentials) return;
   await page.goto('/');
-  await page.getByLabel(/correo/i).fill(staffCredentials.email);
+  await page.getByLabel(/usuario/i).fill(staffCredentials.username);
   await page.getByLabel(/contraseña/i).fill(staffCredentials.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
@@ -30,7 +30,7 @@ test('la aplicación carga sin una pantalla fatal', async ({ page }) => {
 test('un empleado de preview puede iniciar sesión', async ({ page }) => {
   test.skip(
     staffCredentials === null,
-    'Configurar E2E_EMAIL y E2E_PASSWORD para este flujo.',
+    'Configurar E2E_USERNAME y E2E_PASSWORD para este flujo.',
   );
   if (!staffCredentials) return;
 
@@ -40,7 +40,7 @@ test('un empleado de preview puede iniciar sesión', async ({ page }) => {
 test('el modal de cuenta conserva el foco y cierra con teclado', async ({ page }) => {
   test.skip(
     staffCredentials === null,
-    'Configurar E2E_EMAIL y E2E_PASSWORD para este flujo.',
+    'Configurar E2E_USERNAME y E2E_PASSWORD para este flujo.',
   );
   if (!staffCredentials) return;
 

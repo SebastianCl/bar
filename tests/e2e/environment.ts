@@ -23,9 +23,9 @@ if (!supabasePublishableKey.startsWith('sb_publishable_')) {
 }
 
 const credentialVariables = [
-  'E2E_EMAIL',
+  'E2E_USERNAME',
   'E2E_PASSWORD',
-  'E2E_ADMIN_EMAIL',
+  'E2E_ADMIN_USERNAME',
   'E2E_ADMIN_PASSWORD',
 ] as const;
 
@@ -40,17 +40,17 @@ if (process.env.E2E_REQUIRE_ENV === '1') {
   }
 }
 
-type Credentials = { email: string; password: string };
+type Credentials = { username: string; password: string };
 
 export function readCredentials(
-  emailVariable: 'E2E_EMAIL' | 'E2E_ADMIN_EMAIL',
+  usernameVariable: 'E2E_USERNAME' | 'E2E_ADMIN_USERNAME',
   passwordVariable: 'E2E_PASSWORD' | 'E2E_ADMIN_PASSWORD',
   description: string,
 ): Credentials | null {
-  const email = process.env[emailVariable]?.trim();
+  const username = process.env[usernameVariable]?.trim();
   const password = process.env[passwordVariable]?.trim();
   const missing: string[] = [];
-  if (!email) missing.push(emailVariable);
+  if (!username) missing.push(usernameVariable);
   if (!password) missing.push(passwordVariable);
 
   if (process.env.E2E_REQUIRE_ENV === '1' && missing.length > 0) {
@@ -59,5 +59,5 @@ export function readCredentials(
     );
   }
 
-  return email && password ? { email, password } : null;
+  return username && password ? { username, password } : null;
 }

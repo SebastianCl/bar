@@ -12,6 +12,7 @@ export interface Database {
         Row: {
           id: string;
           display_name: string;
+          username: string | null;
           role: AppRole;
           is_active: boolean;
           created_at: string;
@@ -20,6 +21,7 @@ export interface Database {
         Insert: {
           id: string;
           display_name: string;
+          username?: string | null;
           role?: AppRole;
           is_active?: boolean;
           created_at?: string;
@@ -27,6 +29,7 @@ export interface Database {
         };
         Update: {
           display_name?: string;
+          username?: string | null;
           role?: AppRole;
           is_active?: boolean;
           updated_at?: string;
@@ -311,6 +314,10 @@ export interface Database {
       };
     };
     Functions: {
+      get_login_email: {
+        Args: { p_username: string };
+        Returns: string | null;
+      };
       open_tab: {
         Args: {
           p_reference_type: ReferenceType;

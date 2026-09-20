@@ -89,7 +89,7 @@ function moneyFromDatabase(value: unknown): number {
 export async function getProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await getSupabase()
     .from('profiles')
-    .select('id, display_name, role, is_active, created_at, updated_at')
+    .select('id, display_name, username, role, is_active, created_at, updated_at')
     .eq('id', userId)
     .maybeSingle();
 

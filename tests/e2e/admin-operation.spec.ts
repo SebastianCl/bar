@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readCredentials, supabasePublishableKey, supabaseUrl } from './environment';
 
 const adminCredentials = readCredentials(
-  'E2E_ADMIN_EMAIL',
+  'E2E_ADMIN_USERNAME',
   'E2E_ADMIN_PASSWORD',
   'el flujo administrativo y la carrera de cierre',
 );
@@ -32,7 +32,7 @@ test('un administrador completa producto, cuenta, consumo, cierre e impresión',
   );
   test.skip(
     adminCredentials === null,
-    'Configurar E2E_ADMIN_EMAIL y E2E_ADMIN_PASSWORD para el flujo administrativo.',
+    'Configurar E2E_ADMIN_USERNAME y E2E_ADMIN_PASSWORD para el flujo administrativo.',
   );
   if (!adminCredentials) return;
   test.setTimeout(120_000);
@@ -44,7 +44,7 @@ test('un administrador completa producto, cuenta, consumo, cierre e impresión',
   const unitPrice = 2_500;
 
   await page.goto('/login');
-  await page.getByLabel('Correo', { exact: true }).fill(adminCredentials.email);
+  await page.getByLabel('Usuario', { exact: true }).fill(adminCredentials.username);
   await page.getByLabel('Contraseña', { exact: true }).fill(adminCredentials.password);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
   await expect(
@@ -165,8 +165,16 @@ test('un administrador completa producto, cuenta, consumo, cierre e impresión',
       persistSession: false,
     },
   });
-  const { data: authData, error: authError } =
-    await authClient.auth.signInWithPassword(adminCredentials);
+  const { data: loginData, error: loginError } = await authClient.functions.invoke(
+    'username-login',
+    { body: adminCredentials },
+  );
+  expect(loginError).toBeNull();
+  expect(loginData?.session).toBeTruthy();
+  const { data: authData, error: authError } = await authClient.auth.setSession({
+    access_token: loginData.session.access_token,
+    refresh_token: loginData.session.refresh_token,
+  });
   expect(authError).toBeNull();
   expect(authData.session).not.toBeNull();
   const accessToken = authData.session?.access_token;

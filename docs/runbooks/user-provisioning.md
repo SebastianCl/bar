@@ -29,7 +29,9 @@ oficiales: [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls) 
 
 ## 2. Invitar exactamente los tres usuarios iniciales
 
-Preparar los correos y nombres de `ADMIN_1`, `ADMIN_2` y `STAFF`. En el proyecto y
+Preparar los correos, nombres y usuarios únicos de `ADMIN_1`, `ADMIN_2` y `STAFF`.
+El usuario debe tener entre 3 y 32 caracteres: letras minúsculas, números, punto,
+guion o guion bajo; debe empezar por letra o número. En el proyecto y
 entorno correctos:
 
 1. Abrir Supabase Dashboard → Authentication → Users.
@@ -54,15 +56,16 @@ begin;
 
 create temporary table desired_users (
   email text primary key,
+  username text not null unique,
   display_name text not null,
   role public.app_role not null
 ) on commit drop;
 
-insert into desired_users (email, display_name, role)
+insert into desired_users (email, username, display_name, role)
 values
-  ('ADMIN_1_EMAIL', 'ADMIN_1_NAME', 'admin'),
-  ('ADMIN_2_EMAIL', 'ADMIN_2_NAME', 'admin'),
-  ('STAFF_EMAIL', 'STAFF_NAME', 'staff');
+  ('ADMIN_1_EMAIL', 'ADMIN_1_USER', 'ADMIN_1_NAME', 'admin'),
+  ('ADMIN_2_EMAIL', 'ADMIN_2_USER', 'ADMIN_2_NAME', 'admin'),
+  ('STAFF_EMAIL', 'STAFF_USER', 'STAFF_NAME', 'staff');
 
 do $$
 declare
@@ -83,6 +86,7 @@ $$;
 update public.profiles as profile
 set
   display_name = desired.display_name,
+  username = lower(desired.username),
   role = desired.role,
   is_active = true
 from auth.users as auth_user
@@ -110,6 +114,7 @@ select
   auth_user.email,
   auth_user.email_confirmed_at,
   profile.display_name,
+  profile.username,
   profile.role,
   profile.is_active
 from auth.users as auth_user
@@ -134,7 +139,7 @@ Cada persona debe:
 2. Confirmar que llega a `/auth/callback?next=/restablecer` y después a
    `/restablecer` con sesión válida.
 3. Definir una contraseña única de al menos ocho caracteres y cerrar sesión.
-4. Volver a entrar desde `/login`.
+4. Volver a entrar desde `/login` usando el nombre de usuario asignado y su contraseña.
 
 El responsable verifica por separado:
 
@@ -144,8 +149,8 @@ El responsable verifica por separado:
 - un perfil con `is_active = false` no puede leer datos ni ejecutar RPC;
 - al menos dos administradores continúan activos antes de desactivar o degradar uno.
 
-Para preview, crear cuentas dedicadas adicionales para `E2E_EMAIL` y
-`E2E_ADMIN_EMAIL`; el workflow E2E exige ambas parejas de credenciales. No reutilizar
+Para preview, crear cuentas dedicadas adicionales para `E2E_USERNAME` y
+`E2E_ADMIN_USERNAME`; el workflow E2E exige ambas parejas de credenciales. No reutilizar
 ninguno de los tres usuarios operativos de producción.
 
 ## 5. Desactivar o corregir un rol

@@ -9,7 +9,7 @@ import { Spinner } from '../components/States';
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [notice] = useState<string | null>(() => consumeAuthNotice());
@@ -18,17 +18,31 @@ export function LoginPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
-    const parsed = loginSchema.safeParse({ email, password });
+    const parsed = loginSchema.safeParse({ username, password });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? 'Revisa los datos.');
       return;
     }
     setPending(true);
     try {
-      const { error: authError } = await getSupabase().auth.signInWithPassword(
-        parsed.data,
+      const supabase = getSupabase();
+      const { data, error: loginError } = await supabase.functions.invoke(
+        'username-login',
+        {
+          body: {
+            username: parsed.data.username,
+            password: parsed.data.password,
+          },
+        },
       );
-      if (authError) throw authError;
+      if (loginError || !data?.session) {
+        throw new Error('Usuario o contraseña incorrectos.');
+      }
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+      if (sessionError) throw sessionError;
       const requested = (location.state as { from?: string } | null)?.from;
       navigate(requested?.startsWith('/') ? requested : '/cuentas', { replace: true });
     } catch (caught) {
@@ -71,7 +85,7 @@ export function LoginPage() {
           <div>
             <p className="eyebrow">Acceso del equipo</p>
             <h2>Inicia sesión</h2>
-            <p className="muted">Usa el correo asignado por el administrador.</p>
+            <p className="muted">Usa el usuario asignado por el administrador.</p>
           </div>
           {notice ? (
             <div className="alert alert--info" role="status">
@@ -85,13 +99,12 @@ export function LoginPage() {
           ) : null}
           <form className="form-stack" onSubmit={submit} noValidate>
             <label className="field">
-              <span>Correo</span>
+              <span>Usuario</span>
               <input
-                type="email"
-                autoComplete="email"
-                inputMode="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                type="text"
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
                 required
                 autoFocus
               />
