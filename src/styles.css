@@ -25,6 +25,23 @@
   --radius: 18px;
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  color: #e7ece9;
+  background: #111a17;
+  --ink: #e7ece9;
+  --muted: #a6b3ad;
+  --surface: #1b2722;
+  --surface-soft: #202d28;
+  --line: #35443d;
+  --brand: #c76a45;
+  --brand-dark: #efa17f;
+  --accent: #e8b859;
+  --success: #67bd96;
+  --danger: #f0827c;
+  --shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -38,6 +55,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #f4f2ec;
+}
+:root[data-theme='dark'] html,
+:root[data-theme='dark'] body {
+  background: #111a17;
 }
 button,
 input,
@@ -206,6 +227,21 @@ p {
 .icon-button--danger {
   color: var(--danger);
   background: #fff3f1;
+}
+
+.mobile-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.theme-toggle {
+  justify-content: flex-start;
+}
+.theme-toggle > span {
+  width: 1.4rem;
+  display: inline-grid;
+  place-items: center;
+  font-size: 1.15rem;
 }
 
 .spinner {
@@ -1608,4 +1644,128 @@ td small {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-theme='dark'] .button--secondary,
+:root[data-theme='dark'] .field input,
+:root[data-theme='dark'] .field select,
+:root[data-theme='dark'] .field textarea,
+:root[data-theme='dark'] .input-prefix,
+:root[data-theme='dark'] .account-card,
+:root[data-theme='dark'] .data-card,
+:root[data-theme='dark'] .bill-panel,
+:root[data-theme='dark'] .product-panel,
+:root[data-theme='dark'] .modal__surface,
+:root[data-theme='dark'] .segmented label.segmented__active,
+:root[data-theme='dark'] .toast {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .responsive-table tr {
+  color: var(--ink);
+  background: #202d28;
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .account-card__total,
+:root[data-theme='dark'] .row-actions,
+:root[data-theme='dark'] .bill-line {
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .account-card__type,
+:root[data-theme='dark'] .account-card__meta,
+:root[data-theme='dark'] .account-card__total span,
+:root[data-theme='dark'] td,
+:root[data-theme='dark'] .field,
+:root[data-theme='dark'] .check-control,
+:root[data-theme='dark'] .date-filter,
+:root[data-theme='dark'] .search-field,
+:root[data-theme='dark'] .back-link,
+:root[data-theme='dark'] .text-button {
+  color: var(--muted);
+}
+:root[data-theme='dark'] .reference-icon {
+  color: #f1b295;
+  background: #3d302a;
+}
+:root[data-theme='dark'] .segmented,
+:root[data-theme='dark'] .quantity-control {
+  background: #25332d;
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .state-panel {
+  background: rgba(27, 39, 34, 0.72);
+  border-color: var(--line);
+}
+:root[data-theme='dark'] .mobile-header,
+:root[data-theme='dark'] .bottom-nav {
+  background: rgba(27, 39, 34, 0.97);
+}
+:root[data-theme='dark'] .sidebar {
+  color: #e7ece9;
+  background: #19251f;
+}
+:root[data-theme='dark'] .sidebar .nav-item {
+  color: #b8c5be;
+}
+:root[data-theme='dark'] .sidebar .nav-item--active {
+  color: #fff;
+  background: rgba(232, 184, 89, 0.18);
+}
+:root[data-theme='dark'] .bottom-nav__item,
+:root[data-theme='dark'] .icon-button,
+:root[data-theme='dark'] .quantity-control button {
+  color: var(--muted);
+  background: #25332d;
+}
+:root[data-theme='dark'] .bottom-nav__item--active {
+  color: #f1b295;
+  background: #3d302a;
+}
+:root[data-theme='dark'] th,
+:root[data-theme='dark'] .segmented,
+:root[data-theme='dark'] .toast button {
+  color: var(--muted);
+  background: #25332d;
+}
+:root[data-theme='dark'] td,
+:root[data-theme='dark'] .field,
+:root[data-theme='dark'] .check-control,
+:root[data-theme='dark'] .date-filter,
+:root[data-theme='dark'] .search-field {
+  color: var(--ink);
+}
+:root[data-theme='dark'] .status-badge--open,
+:root[data-theme='dark'] .status-badge--active,
+:root[data-theme='dark'] .stock-badge {
+  color: #a1dfbf;
+  background: #214334;
+}
+:root[data-theme='dark'] .status-badge--closed {
+  color: #cad2ce;
+  background: #35423d;
+}
+:root[data-theme='dark'] .status-badge--cancelled,
+:root[data-theme='dark'] .status-badge--inactive {
+  color: #c6b9b3;
+  background: #3b3330;
+}
+:root[data-theme='dark'] .stock-badge--low {
+  color: #ffc08a;
+  background: #483522;
+}
+:root[data-theme='dark'] .alert--error {
+  color: #ffb5af;
+  border-color: #74413e;
+  background: #3a2423;
+}
+:root[data-theme='dark'] .alert--info {
+  color: #a8d8ed;
+  border-color: #36596a;
+  background: #1d3440;
+}
+:root[data-theme='dark'] .success-panel {
+  color: #a1dfbf;
+  border-color: #345d48;
+  background: #1e3629;
 }
