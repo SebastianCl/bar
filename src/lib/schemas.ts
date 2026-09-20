@@ -8,7 +8,11 @@ const cleanText = (label: string, maximum: number) =>
     .max(maximum, `${label} es demasiado largo.`);
 
 export const loginSchema = z.object({
-  username: z.string().trim().min(1, 'Escribe tu usuario.').max(60, 'El usuario es demasiado largo.'),
+  username: z
+    .string()
+    .trim()
+    .min(1, 'Escribe tu usuario.')
+    .max(60, 'El usuario es demasiado largo.'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres.'),
 });
 

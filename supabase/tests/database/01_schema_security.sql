@@ -164,9 +164,39 @@ select is(
       on namespace.oid = procedure.pronamespace
     where namespace.nspname = 'public'
       and procedure.prosecdef
+      and procedure.proname <> 'get_login_email'
   ),
   0::bigint,
-  'the exposed schema contains no SECURITY DEFINER function'
+  'the exposed schema contains no other SECURITY DEFINER functions'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.get_login_email(text)', 'EXECUTE')
+    and not has_function_privilege(
+      'authenticated',
+      'public.get_login_email(text)',
+      'EXECUTE'
+    )
+    and has_function_privilege(
+      'service_role',
+      'public.get_login_email(text)',
+      'EXECUTE'
+    ),
+  'the username lookup is executable only by service_role'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_catalog.pg_proc as procedure
+    join pg_catalog.pg_namespace as namespace
+      on namespace.oid = procedure.pronamespace
+    where namespace.nspname = 'public'
+      and procedure.proname = 'get_login_email'
+      and procedure.prosecdef
+      and procedure.proconfig @> array['search_path=""']::text[]
+  ),
+  'the privileged username lookup pins an empty search_path'
 );
 
 select is(

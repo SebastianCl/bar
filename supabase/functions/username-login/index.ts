@@ -22,7 +22,10 @@ Deno.serve(async (request) => {
     return response({ error: 'invalid_credentials' }, 400);
   }
 
-  const username = typeof credentials.username === 'string' ? credentials.username.trim().toLowerCase() : '';
+  const username =
+    typeof credentials.username === 'string'
+      ? credentials.username.trim().toLowerCase()
+      : '';
   const password = typeof credentials.password === 'string' ? credentials.password : '';
   if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username) || password.length === 0) {
     return response({ error: 'invalid_credentials' }, 400);
@@ -35,14 +38,17 @@ Deno.serve(async (request) => {
   });
   if (lookupError || !email) return response({ error: 'invalid_credentials' }, 400);
 
-  const tokenResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: {
-      apikey: Deno.env.get('SUPABASE_ANON_KEY')!,
-      'Content-Type': 'application/json',
+  const tokenResponse = await fetch(
+    `${supabaseUrl}/auth/v1/token?grant_type=password`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: Deno.env.get('SUPABASE_ANON_KEY')!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
     },
-    body: JSON.stringify({ email, password }),
-  });
+  );
   if (!tokenResponse.ok) return response({ error: 'invalid_credentials' }, 400);
 
   const session = await tokenResponse.json();
