@@ -67,6 +67,11 @@ const knownMessages: Array<{ pattern: RegExp; code: AppErrorCode; message: strin
     message: 'Revisa los datos e inténtalo nuevamente.',
   },
   {
+    pattern: /balance[_\s-]?(due|exceeded)|saldo pendiente|abono supera/i,
+    code: 'VALIDATION',
+    message: 'El abono supera el saldo pendiente o la cuenta aún tiene saldo.',
+  },
+  {
     pattern: /unauthenticated|authentication[_\s-]?required/i,
     code: 'AUTH_REQUIRED',
     message: 'Tu sesión venció. Vuelve a iniciar sesión.',

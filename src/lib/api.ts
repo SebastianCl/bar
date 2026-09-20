@@ -14,12 +14,15 @@ import type {
   ReferenceType,
   Tab,
   TabItem,
+  TabPayment,
 } from './database.types';
-import type { OpenTabInput, ProductInput } from './schemas';
+import type { OpenTabInput, PaymentInput, ProductInput } from './schemas';
 
 export interface TabDetail {
   tab: Tab;
   items: TabItem[];
+  payments: TabPayment[];
+  paidTotal: number;
   total: number;
 }
 
@@ -42,6 +45,7 @@ function appCodeFromRpc(
   const normalized = code?.toUpperCase();
   if (normalized?.includes('STOCK')) return 'OUT_OF_STOCK';
   if (normalized?.includes('CLOSED')) return 'ACCOUNT_CLOSED';
+  if (normalized?.includes('BALANCE')) return 'VALIDATION';
   if (normalized?.includes('VALIDATION')) return 'VALIDATION';
   if (normalized?.includes('UNAUTHENTICATED')) return 'AUTH_REQUIRED';
   if (normalized?.includes('FORBIDDEN') || normalized?.includes('PERMISSION'))
@@ -134,20 +138,30 @@ export async function getBarSettings(): Promise<BarSettings | null> {
 }
 
 export async function getTabDetail(tabId: string): Promise<TabDetail> {
-  const [tabResult, itemsResult, summaryResult, receiptResult] = await Promise.all([
-    getSupabase().from('tabs').select('*').eq('id', tabId).maybeSingle(),
-    getSupabase()
-      .from('tab_items')
-      .select('*')
-      .eq('tab_id', tabId)
-      .order('created_at', { ascending: true }),
-    getSupabase()
-      .from('open_tabs_summary')
-      .select('total')
-      .eq('id', tabId)
-      .maybeSingle(),
-    getSupabase().from('receipts').select('total').eq('tab_id', tabId).maybeSingle(),
-  ]);
+  const [tabResult, itemsResult, summaryResult, receiptResult, paymentsResult] =
+    await Promise.all([
+      getSupabase().from('tabs').select('*').eq('id', tabId).maybeSingle(),
+      getSupabase()
+        .from('tab_items')
+        .select('*')
+        .eq('tab_id', tabId)
+        .order('created_at', { ascending: true }),
+      getSupabase()
+        .from('open_tabs_summary')
+        .select('total')
+        .eq('id', tabId)
+        .maybeSingle(),
+      getSupabase()
+        .from('receipts')
+        .select('total')
+        .eq('tab_id', tabId)
+        .maybeSingle(),
+      getSupabase()
+        .from('tab_payments')
+        .select('*')
+        .eq('tab_id', tabId)
+        .order('created_at', { ascending: true }),
+    ]);
 
   if (tabResult.error)
     throw normalizeError(tabResult.error, 'No fue posible cargar la cuenta.');
@@ -165,12 +179,35 @@ export async function getTabDetail(tabId: string): Promise<TabDetail> {
       receiptResult.error,
       'No fue posible cargar el total de la cuenta.',
     );
+  if (paymentsResult.error)
+    throw normalizeError(paymentsResult.error, 'No fue posible cargar los abonos.');
 
   const items = itemsResult.data ?? [];
   const authoritativeTotal =
     summaryResult.data?.total ?? receiptResult.data?.total ?? 0;
   const total = moneyFromDatabase(authoritativeTotal);
-  return { tab: tabResult.data, items, total };
+  const payments = paymentsResult.data ?? [];
+  const paidCents = payments.reduce(
+    (sum, payment) => sum + Math.round(moneyFromDatabase(payment.amount) * 100),
+    0,
+  );
+  const paidTotal = paidCents / 100;
+  return { tab: tabResult.data, items, payments, paidTotal, total };
+}
+
+export async function addTabPayment(
+  tabId: string,
+  input: PaymentInput,
+  requestId = createIntentId(),
+): Promise<void> {
+  requireOnline();
+  const { data, error } = await getSupabase().rpc('add_tab_payment', {
+    p_tab_id: tabId,
+    p_amount: input.amount,
+    p_payer_name: input.payerName || null,
+    p_request_id: requestId,
+  });
+  unwrapRpc(data, error);
 }
 
 export interface ReceiptPage {

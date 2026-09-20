@@ -7,6 +7,7 @@ import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useResource } from '../hooks/useResource';
 import {
   addConsumption,
+  addTabPayment,
   cancelEmptyTab,
   closeTab,
   getTabDetail,
@@ -18,7 +19,7 @@ import type { Product, TabItem } from '../lib/database.types';
 import { normalizeError } from '../lib/errors';
 import { formatCurrency, formatDateTime } from '../lib/format';
 import { createIntentId } from '../lib/intent';
-import { consumptionSchema } from '../lib/schemas';
+import { consumptionSchema, paymentSchema } from '../lib/schemas';
 
 export function AccountDetailPage() {
   const { id = '' } = useParams();
@@ -39,11 +40,15 @@ export function AccountDetailPage() {
   const [actionError, setActionError] = useState('');
   const [voidingItem, setVoidingItem] = useState<TabItem | null>(null);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [payerName, setPayerName] = useState('');
   const addIntentRef = useRef<string | null>(null);
   const quantityIntentsRef = useRef(new Map<string, string>());
   const voidIntentRef = useRef<string | null>(null);
   const closeIntentRef = useRef<string | null>(null);
   const cancelIntentRef = useRef<string | null>(null);
+  const paymentIntentRef = useRef<string | null>(null);
 
   const activeItems = data?.items.filter((item) => item.voided_at === null) ?? [];
   const visibleProducts = useMemo(() => {
@@ -56,6 +61,38 @@ export function AccountDetailPage() {
     );
   }, [data?.products, productSearch]);
   const tabOpen = data?.tab.status === 'open';
+  const outstanding = Math.max(
+    0,
+    Math.round(((data?.total ?? 0) - (data?.paidTotal ?? 0)) * 100) / 100,
+  );
+
+  const submitPayment = async (event: FormEvent) => {
+    event.preventDefault();
+    const parsed = paymentSchema.safeParse({ amount: paymentAmount, payerName });
+    if (!parsed.success) {
+      setActionError(parsed.error.issues[0]?.message ?? 'Revisa el valor del abono.');
+      return;
+    }
+    if (parsed.data.amount > outstanding) {
+      setActionError('El abono no puede superar el saldo pendiente.');
+      return;
+    }
+    setPendingAction('payment');
+    setActionError('');
+    try {
+      await addTabPayment(id, parsed.data, (paymentIntentRef.current ??= createIntentId()));
+      paymentIntentRef.current = null;
+      setPaymentOpen(false);
+      setPaymentAmount('');
+      setPayerName('');
+      notify('Abono registrado correctamente.', 'success');
+      reload();
+    } catch (caught) {
+      setActionError(normalizeError(caught).message);
+    } finally {
+      setPendingAction('');
+    }
+  };
 
   const addProduct = async (event: FormEvent) => {
     event.preventDefault();
@@ -230,8 +267,10 @@ export function AccountDetailPage() {
           <p className="muted">Abierta {formatDateTime(data.tab.opened_at)}</p>
         </div>
         <div className="detail-header__total">
-          <span>Total acumulado</span>
+          <span>Total consumido</span>
           <strong>{formatCurrency(data.total)}</strong>
+          <span>Abonado: {formatCurrency(data.paidTotal)}</span>
+          <span>Saldo pendiente: {formatCurrency(outstanding)}</span>
           <span className={`status-badge status-badge--${data.tab.status}`}>
             {data.tab.status === 'open'
               ? 'Abierta'
@@ -323,9 +362,33 @@ export function AccountDetailPage() {
             </div>
           )}
           <div className="bill-summary">
-            <span>Total</span>
+            <span>Total consumido</span>
             <strong>{formatCurrency(data.total)}</strong>
           </div>
+          <div className="bill-summary">
+            <span>Abonado</span>
+            <strong>{formatCurrency(data.paidTotal)}</strong>
+          </div>
+          <div className="bill-summary">
+            <span>Saldo pendiente</span>
+            <strong>{formatCurrency(outstanding)}</strong>
+          </div>
+          {data.payments.length ? (
+            <section className="payment-history" aria-label="Historial de abonos">
+              <h3>Abonos registrados</h3>
+              <ul>
+                {data.payments.map((payment) => (
+                  <li key={payment.id}>
+                    <span>
+                      {payment.payer_name || 'Sin nombre'} ·{' '}
+                      {formatDateTime(payment.created_at)}
+                    </span>
+                    <strong>{formatCurrency(payment.amount)}</strong>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           {tabOpen ? (
             <div className="bill-actions">
               {activeItems.length === 0 ? (
@@ -337,9 +400,23 @@ export function AccountDetailPage() {
                   {pendingAction === 'cancel' ? 'Cancelando…' : 'Cancelar cuenta vacía'}
                 </button>
               ) : null}
+              {outstanding > 0 ? (
+                <button
+                  className="button button--ghost"
+                  disabled={!isOnline || pendingAction === 'payment'}
+                  onClick={() => {
+                    paymentIntentRef.current = createIntentId();
+                    setPaymentAmount(outstanding.toFixed(2));
+                    setPaymentOpen(true);
+                    setActionError('');
+                  }}
+                >
+                  Registrar abono
+                </button>
+              ) : null}
               <button
                 className="button button--primary button--large"
-                disabled={!isOnline || activeItems.length === 0}
+                disabled={!isOnline || activeItems.length === 0 || outstanding > 0}
                 onClick={() => {
                   closeIntentRef.current = createIntentId();
                   setCloseOpen(true);
@@ -470,6 +547,75 @@ export function AccountDetailPage() {
                 </>
               ) : (
                 'Agregar a la cuenta'
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        open={paymentOpen}
+        onClose={() => {
+          if (!pendingAction) {
+            paymentIntentRef.current = null;
+            setPaymentOpen(false);
+          }
+        }}
+        title="Registrar abono"
+        description={`Saldo pendiente: ${formatCurrency(outstanding)}`}
+        size="small"
+      >
+        <form className="form-stack" onSubmit={submitPayment}>
+          <label className="field">
+            <span>Valor del abono</span>
+            <input
+              type="number"
+              min="0.01"
+              max={outstanding}
+              step="0.01"
+              inputMode="decimal"
+              value={paymentAmount}
+              onChange={(event) => {
+                paymentIntentRef.current = createIntentId();
+                setPaymentAmount(event.target.value);
+              }}
+              autoFocus
+            />
+          </label>
+          <label className="field">
+            <span>Quién paga (opcional)</span>
+            <input
+              value={payerName}
+              maxLength={100}
+              onChange={(event) => {
+                paymentIntentRef.current = createIntentId();
+                setPayerName(event.target.value);
+              }}
+            />
+          </label>
+          {actionError ? (
+            <div className="alert alert--error" role="alert">
+              {actionError}
+            </div>
+          ) : null}
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="button button--ghost"
+              disabled={pendingAction === 'payment'}
+              onClick={() => setPaymentOpen(false)}
+            >
+              Cancelar
+            </button>
+            <button
+              className="button button--primary"
+              disabled={!isOnline || pendingAction === 'payment'}
+            >
+              {pendingAction === 'payment' ? (
+                <>
+                  <Spinner /> Registrando…
+                </>
+              ) : (
+                'Registrar abono'
               )}
             </button>
           </div>

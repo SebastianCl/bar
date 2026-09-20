@@ -91,6 +91,15 @@ erDiagram
     char currency "COP"
     uuid close_request_id UK
   }
+  TAB_PAYMENTS {
+    uuid id PK
+    uuid tab_id FK
+    numeric amount
+    text payer_name
+    uuid request_id UK
+    uuid actor_id FK
+    timestamptz created_at
+  }
   RECEIPT_ITEMS {
     bigint id PK
     uuid receipt_id FK
@@ -131,6 +140,7 @@ globalmente únicos entre RPC.
 | `void_tab_item`         | `p_item_id`, `p_request_id`                                      | `tab`, `item`, `product`  |
 | `cancel_empty_tab`      | `p_tab_id`, `p_request_id`                                       | `tab`                     |
 | `close_tab`             | `p_tab_id`, `p_request_id`                                       | `tab`, `receipt`, `items` |
+| `add_tab_payment`       | `p_tab_id`, `p_amount`, `p_payer_name`, `p_request_id`            | `payment`, `paid_total`, `balance` |
 
 No se aceptan desde el cliente precio snapshot, total, actor, stock resultante ni número
 de recibo. `update_product` es una edición administrativa y no cambia inventario; el
@@ -145,5 +155,7 @@ conteo usa `set_stock` para dejar movimiento y motivo.
 - Editar una cantidad devuelve o descuenta solo la diferencia.
 - Anular devuelve toda la cantidad; la línea queda visible como anulada.
 - Solo se cancela una cuenta sin consumos vigentes.
+- Los abonos son registros append-only; la cuenta no se cierra hasta que lo abonado cubra el total vigente.
+- Nuevos consumos se permiten después de abonos, pero no se puede reducir el total por debajo de lo ya pagado.
 - Una cuenta cerrada, recibo y movimientos no se modifican; el código `REC` identifica
   un comprobante interno, no un documento fiscal.

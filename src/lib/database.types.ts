@@ -200,6 +200,20 @@ export interface Database {
         };
         Relationships: [];
       };
+      tab_payments: {
+        Row: {
+          id: string;
+          tab_id: string;
+          amount: number;
+          payer_name: string | null;
+          request_id: string;
+          actor_id: string;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       inventory_movements: {
         Row: {
           id: number;
@@ -380,6 +394,15 @@ export interface Database {
         Args: { p_tab_id: string; p_request_id: string };
         Returns: Json;
       };
+      add_tab_payment: {
+        Args: {
+          p_tab_id: string;
+          p_amount: number;
+          p_payer_name: string | null;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       app_role: AppRole;
@@ -394,6 +417,7 @@ export type BarSettings = Database['public']['Tables']['bar_settings']['Row'];
 export type Product = Database['public']['Tables']['products']['Row'];
 export type Tab = Database['public']['Tables']['tabs']['Row'];
 export type TabItem = Database['public']['Tables']['tab_items']['Row'];
+export type TabPayment = Database['public']['Tables']['tab_payments']['Row'];
 export type OpenTabSummary = Database['public']['Views']['open_tabs_summary']['Row'];
 export type Receipt = Database['public']['Tables']['receipts']['Row'];
 export type ReceiptItem = Database['public']['Tables']['receipt_items']['Row'];

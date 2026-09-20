@@ -364,6 +364,83 @@ select is(
 
 select pg_temp.set_actor('a0000000-0000-0000-0000-000000000002');
 insert into test_state (key, payload)
+select 'payment_partial', public.add_tab_payment(
+  (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
+  5000.00,
+  'Andrea',
+  '71000000-0000-0000-0000-000000000001'
+);
+
+select is(
+  (select (payload ->> 'balance')::numeric from test_state where key = 'payment_partial'),
+  15000.00::numeric,
+  'a partial payment reduces the outstanding balance'
+);
+
+insert into test_state (key, payload)
+select 'add_after_payment', public.add_consumption(
+  (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
+  (select (payload #>> '{product,id}')::uuid from test_state where key = 'create_product'),
+  1,
+  '70000000-0000-0000-0000-000000000003'
+);
+
+insert into test_state (key, payload)
+select 'payment_partial_replay', public.add_tab_payment(
+  (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
+  5000.00,
+  'Andrea',
+  '71000000-0000-0000-0000-000000000001'
+);
+
+select is(
+  (select payload from test_state where key = 'payment_partial_replay'),
+  (select payload from test_state where key = 'payment_partial'),
+  'payment retries return the cached result without duplicating the payment'
+);
+
+select throws_ok(
+  format(
+    'select public.add_tab_payment(%L::uuid, 26000.00, null, %L::uuid)',
+    (select payload #>> '{tab,id}' from test_state where key = 'tab_two'),
+    '71000000-0000-0000-0000-000000000002'
+  ),
+  'P0001',
+  'balance_exceeded',
+  'a payment cannot exceed the outstanding balance'
+);
+
+select throws_ok(
+  format(
+    'select public.close_tab(%L::uuid, %L::uuid)',
+    (select payload #>> '{tab,id}' from test_state where key = 'tab_two'),
+    '80000000-0000-0000-0000-000000000001'
+  ),
+  'P0001',
+  'balance_due',
+  'a tab with an outstanding balance cannot be closed'
+);
+
+insert into test_state (key, payload)
+select 'payment_final', public.add_tab_payment(
+  (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
+  25000.00,
+  null,
+  '71000000-0000-0000-0000-000000000003'
+);
+
+select throws_ok(
+  format(
+    'select public.void_tab_item(%L::uuid, %L::uuid)',
+    (select payload #>> '{item,id}' from test_state where key = 'add_two'),
+    '71000000-0000-0000-0000-000000000004'
+  ),
+  'P0001',
+  'balance_exceeded',
+  'a paid amount cannot exceed the bill after voiding a line'
+);
+
+insert into test_state (key, payload)
 select 'close_two', public.close_tab(
   (select (payload #>> '{tab,id}')::uuid from test_state where key = 'tab_two'),
   '80000000-0000-0000-0000-000000000001'
@@ -377,13 +454,13 @@ select is(
 
 select is(
   (select (payload #>> '{receipt,total}')::numeric from test_state where key = 'close_two'),
-  20000.00::numeric,
+  30000.00::numeric,
   'the receipt total uses historical prices'
 );
 
 select is(
   (select jsonb_array_length(payload -> 'items') from test_state where key = 'close_two'),
-  1,
+  2,
   'closing snapshots each active line into receipt_items'
 );
 

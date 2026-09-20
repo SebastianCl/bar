@@ -54,6 +54,15 @@ export const itemQuantitySchema = z.object({
   quantity: z.coerce.number().int().min(1).max(999),
 });
 
+export const paymentSchema = z.object({
+  amount: z.coerce
+    .number()
+    .positive('El abono debe ser mayor que cero.')
+    .max(999999999999.99)
+    .multipleOf(0.01, 'Usa máximo dos decimales.'),
+  payerName: z.string().trim().max(100, 'El nombre es demasiado largo.'),
+});
+
 export const productSchema = z.object({
   name: cleanText('El nombre', 120),
   sku: z.string().trim().max(50, 'El código es demasiado largo.'),
@@ -79,5 +88,6 @@ export type RecoveryInput = z.infer<typeof recoverySchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type OpenTabInput = z.infer<typeof openTabSchema>;
 export type ConsumptionInput = z.infer<typeof consumptionSchema>;
+export type PaymentInput = z.infer<typeof paymentSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type StockAdjustmentInput = z.infer<typeof stockAdjustmentSchema>;
