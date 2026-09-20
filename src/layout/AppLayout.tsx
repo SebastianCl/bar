@@ -119,7 +119,11 @@ export function AppLayout() {
             >
               <span aria-hidden="true">{darkMode ? '☀' : '☾'}</span>
             </button>
-            <button type="button" className="text-button" onClick={() => void signOut()}>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => void signOut()}
+            >
               Salir
             </button>
           </div>
