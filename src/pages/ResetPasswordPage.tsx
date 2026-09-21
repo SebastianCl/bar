@@ -42,7 +42,7 @@ export function ResetPasswordPage() {
       <section className="auth-card auth-card--standalone">
         <div className="auth-brand">
           <span>B</span>
-          <strong>Bar · Operación</strong>
+          <strong>Charcuteria La 61</strong>
         </div>
         <div>
           <p className="eyebrow">Nueva contraseña</p>

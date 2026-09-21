@@ -80,7 +80,7 @@ export function LoginPage() {
         <div className="auth-card">
           <div className="auth-brand">
             <span>B</span>
-            <strong>Bar · Operación</strong>
+            <strong>Charcuteria La 61</strong>
           </div>
           <div>
             <p className="eyebrow">Acceso del equipo</p>
