@@ -1184,6 +1184,9 @@ td small {
   gap: 0.7rem;
   margin-top: 1rem;
 }
+.bill-actions__close {
+  margin-inline-start: auto;
+}
 .product-picker {
   max-height: 560px;
   display: grid;

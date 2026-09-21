@@ -427,7 +427,7 @@ export function AccountDetailPage() {
                 </button>
               ) : null}
               <button
-                className="button button--primary button--large"
+                className="button button--primary button--large bill-actions__close"
                 disabled={!isOnline || activeItems.length === 0 || outstanding > 0}
                 onClick={() => {
                   closeIntentRef.current = createIntentId();
