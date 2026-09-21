@@ -12,7 +12,7 @@ export interface AuthContextValue {
   isLoading: boolean;
   error: AppError | ConfigurationError | null;
   refreshProfile: () => Promise<void>;
-  signOut: (reason?: 'manual' | 'inactivity') => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

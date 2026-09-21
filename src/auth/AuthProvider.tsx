@@ -12,8 +12,7 @@ import type { Profile } from '../lib/database.types';
 import { ConfigurationError } from '../lib/env';
 import { normalizeError } from '../lib/errors';
 import { getSupabase } from '../lib/supabase';
-import { useInactivityLogout } from '../hooks/useInactivityLogout';
-import { AUTH_NOTICE_KEY, AuthContext, type AuthContextValue } from './auth-context';
+import { AuthContext, type AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -37,13 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userId) await loadProfile(userId);
   }, [loadProfile]);
 
-  const signOut = useCallback(async (reason: 'manual' | 'inactivity' = 'manual') => {
-    if (reason === 'inactivity') {
-      sessionStorage.setItem(
-        AUTH_NOTICE_KEY,
-        'Cerramos la sesión después de 30 minutos sin actividad.',
-      );
-    }
+  const signOut = useCallback(async () => {
     try {
       await getSupabase().auth.signOut();
     } finally {
@@ -52,10 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
     }
   }, []);
-
-  useInactivityLogout(Boolean(session), () => {
-    void signOut('inactivity');
-  });
 
   useEffect(() => {
     let isMounted = true;
