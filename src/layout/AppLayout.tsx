@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
+import { ClipboardList, Package, Receipt } from 'lucide-react';
 import { useAuth } from '../auth/auth-context';
 import { getBarSettings } from '../lib/api';
 import { roleLabel } from '../lib/format';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 const navigation = [
-  { to: '/cuentas', label: 'Cuentas', icon: '▤' },
-  { to: '/inventario', label: 'Inventario', icon: '▣' },
-  { to: '/ventas', label: 'Ventas', icon: '↗' },
+  { to: '/cuentas', label: 'Cuentas', icon: ClipboardList },
+  { to: '/inventario', label: 'Inventario', icon: Package },
+  { to: '/ventas', label: 'Ventas', icon: Receipt },
 ];
 
 const themeStorageKey = 'bar-theme';
@@ -63,7 +64,7 @@ export function AppLayout() {
                 `nav-item ${isActive ? 'nav-item--active' : ''}`
               }
             >
-              <span aria-hidden="true">{item.icon}</span>
+              <item.icon aria-hidden="true" className="nav-item__icon" size={20} strokeWidth={1.8} />
               {item.label}
             </NavLink>
           ))}
@@ -140,7 +141,7 @@ export function AppLayout() {
                 `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
               }
             >
-              <span aria-hidden="true">{item.icon}</span>
+              <item.icon aria-hidden="true" className="bottom-nav__icon" size={20} strokeWidth={1.8} />
               <small>{item.label}</small>
             </NavLink>
           ))}
