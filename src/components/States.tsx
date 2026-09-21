@@ -57,7 +57,7 @@ export function FullPageState(props: StateProps) {
   return (
     <main className="full-page-state">
       <div className="full-page-state__brand">
-        <span>B</span> Charcuteria La 61
+        <span>61</span> Charcuteria La 61
       </div>
       <StatePanel {...props} />
     </main>

@@ -79,7 +79,7 @@ export function LoginPage() {
       <section className="auth-panel">
         <div className="auth-card">
           <div className="auth-brand">
-            <span>B</span>
+            <span>61</span>
             <strong>Charcuteria La 61</strong>
           </div>
           <div>

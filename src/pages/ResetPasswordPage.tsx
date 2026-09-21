@@ -41,7 +41,7 @@ export function ResetPasswordPage() {
     <main className="simple-auth-page">
       <section className="auth-card auth-card--standalone">
         <div className="auth-brand">
-          <span>B</span>
+          <span>61</span>
           <strong>Charcuteria La 61</strong>
         </div>
         <div>

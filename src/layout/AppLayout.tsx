@@ -49,7 +49,7 @@ export function AppLayout() {
     <div className="app-shell">
       <aside className="sidebar no-print">
         <div className="brand">
-          <span className="brand__mark">B</span>
+          <span className="brand__mark">61</span>
           <span>
             <strong>{barName}</strong>
             <small>Operación</small>
