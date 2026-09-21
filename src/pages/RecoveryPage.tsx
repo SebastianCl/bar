@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Spinner } from '../components/States';
 import { normalizeError } from '../lib/errors';
@@ -11,7 +11,7 @@ export function RecoveryPage() {
   const [error, setError] = useState('');
   const [sent, setSent] = useState(false);
 
-  const submit = async (event: FormEvent) => {
+  const submit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
     const parsed = recoverySchema.safeParse({ email });

@@ -64,7 +64,12 @@ export function AppLayout() {
                 `nav-item ${isActive ? 'nav-item--active' : ''}`
               }
             >
-              <item.icon aria-hidden="true" className="nav-item__icon" size={20} strokeWidth={1.8} />
+              <item.icon
+                aria-hidden="true"
+                className="nav-item__icon"
+                size={20}
+                strokeWidth={1.8}
+              />
               {item.label}
             </NavLink>
           ))}
@@ -141,7 +146,12 @@ export function AppLayout() {
                 `bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`
               }
             >
-              <item.icon aria-hidden="true" className="bottom-nav__icon" size={20} strokeWidth={1.8} />
+              <item.icon
+                aria-hidden="true"
+                className="bottom-nav__icon"
+                size={20}
+                strokeWidth={1.8}
+              />
               <small>{item.label}</small>
             </NavLink>
           ))}
