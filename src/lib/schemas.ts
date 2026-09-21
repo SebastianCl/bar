@@ -58,8 +58,8 @@ export const paymentSchema = z.object({
   amount: z.coerce
     .number()
     .positive('El abono debe ser mayor que cero.')
-    .max(999999999999.99)
-    .multipleOf(0.01, 'Usa máximo dos decimales.'),
+    .int('Ingresa el valor en pesos enteros, sin decimales.')
+    .max(999999999999),
   payerName: z.string().trim().max(100, 'El nombre es demasiado largo.'),
 });
 

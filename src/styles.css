@@ -1682,12 +1682,65 @@ td small {
 :root[data-theme='dark'] .data-card,
 :root[data-theme='dark'] .bill-panel,
 :root[data-theme='dark'] .product-panel,
+:root[data-theme='dark'] .product-option,
 :root[data-theme='dark'] .modal__surface,
 :root[data-theme='dark'] .segmented label.segmented__active,
 :root[data-theme='dark'] .toast {
   color: var(--ink);
   background: var(--surface-soft);
   border-color: var(--line);
+}
+:root[data-theme='dark'] .product-option {
+  color: var(--ink);
+  border-color: var(--line);
+  background: #25332d;
+}
+:root[data-theme='dark'] .product-option:hover:not(:disabled) {
+  border-color: #91644f;
+  background: #302b26;
+}
+:root[data-theme='dark'] .product-option > strong {
+  color: #f1a17e;
+}
+:root[data-theme='dark'] .product-option small {
+  color: var(--muted);
+}
+:root[data-theme='dark'] .calculated-total,
+:root[data-theme='dark'] .close-summary,
+:root[data-theme='dark'] .receipt__reference {
+  color: var(--ink);
+  background: #25332d;
+}
+:root[data-theme='dark'] .receipt {
+  color: #1c2824;
+  border-color: #d9d9d2;
+  background: #fff;
+}
+:root[data-theme='dark'] .receipt h1,
+:root[data-theme='dark'] .receipt h2,
+:root[data-theme='dark'] .receipt strong,
+:root[data-theme='dark'] .receipt dd,
+:root[data-theme='dark'] .receipt td {
+  color: #1c2824;
+}
+:root[data-theme='dark'] .receipt__header {
+  border-color: #1c2824;
+}
+:root[data-theme='dark'] .receipt__items th {
+  color: #fff;
+  background: #1d302a;
+}
+:root[data-theme='dark'] .receipt__items td {
+  color: #35413c;
+}
+:root[data-theme='dark'] .receipt__total {
+  border-color: #1c2824;
+}
+:root[data-theme='dark'] .receipt__footer,
+:root[data-theme='dark'] .receipt__header p,
+:root[data-theme='dark'] .receipt__title span,
+:root[data-theme='dark'] .receipt__reference dt {
+  color: #66736e;
 }
 :root[data-theme='dark'] .auth-page {
   color: var(--ink);

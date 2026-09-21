@@ -21,6 +21,14 @@ import { formatCurrency, formatDateTime } from '../lib/format';
 import { createIntentId } from '../lib/intent';
 import { consumptionSchema, paymentSchema } from '../lib/schemas';
 
+const paymentAmountFormatter = new Intl.NumberFormat('es-CO', {
+  maximumFractionDigits: 0,
+});
+
+function formatPaymentAmount(value: string): string {
+  return value ? paymentAmountFormatter.format(Number(value)) : '';
+}
+
 export function AccountDetailPage() {
   const { id = '' } = useParams();
   const navigate = useNavigate();
@@ -410,7 +418,7 @@ export function AccountDetailPage() {
                   disabled={!isOnline || pendingAction === 'payment'}
                   onClick={() => {
                     paymentIntentRef.current = createIntentId();
-                    setPaymentAmount(outstanding.toFixed(2));
+                    setPaymentAmount(String(Math.floor(outstanding)));
                     setPaymentOpen(true);
                     setActionError('');
                   }}
@@ -572,16 +580,15 @@ export function AccountDetailPage() {
           <label className="field">
             <span>Valor del abono</span>
             <input
-              type="number"
-              min="0.01"
-              max={outstanding}
-              step="0.01"
-              inputMode="decimal"
-              value={paymentAmount}
+              type="text"
+              inputMode="numeric"
+              value={formatPaymentAmount(paymentAmount)}
               onChange={(event) => {
                 paymentIntentRef.current = createIntentId();
-                setPaymentAmount(event.target.value);
+                const integerPart = event.target.value.split(',')[0] ?? '';
+                setPaymentAmount(integerPart.replace(/\D/g, '').slice(0, 12));
               }}
+              placeholder="Ej. 15.000"
               autoFocus
             />
           </label>
